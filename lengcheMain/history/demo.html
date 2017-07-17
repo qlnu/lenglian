@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
+    <style type="text/css">
+        body,html,#container{
+            height: 100%;
+            margin: 0px;
+            font:12px Arial;
+        }
+
+    </style>
+    <title>Marker example</title>
+</head>
+<body>
+<ul>
+    <li class="jzrow">张三</li>
+    <li class="jzrow" onclick="jzsetLat()">定位</li>
+    <li class="jzrow" onclick='jzHistoryMark()'>轨迹</li>
+    <li class="jzrow" onclick='startRun()'>动画</li>
+</ul>
+
+<script type="text/javascript">
+function jzHistoryMark() {  //历史轨迹方法
+var ifr = document.getElementById('iframeRight');
+var targetOrigin = '*';
+var json = {
+"dname": "张三",
+"guiji": [
+{
+"lngX": "117.1419139142", //高德：117.187386  //gps慧谷大厦：39.1157409540,117.1419139142
+"latY": "39.1157409540", // 高德：39.120544
+"address": "天津市南开区红旗路220号慧谷大厦",
+"dTime": "2016-12-20 06:00"
+},
+{
+"lngX": "117.181942",
+"latY": "39.122237",
+"address": "天津市和平区甘肃路",
+"dTime": "2016-12-20 06:30"
+},
+{
+"lngX": "117.183078",
+"latY": "39.121749",
+"address": "天津市和平区鞍山道与甘肃路交口",
+"dTime": "2016-12-20 07:00"
+},
+{
+"lngX": "117.184110",
+"latY": "39.122973",
+"address": "天津市和平区鞍山道与陕西路交口",
+"dTime": "2016-12-20 07:30"
+},
+{
+"lngX": "117.185378",
+"latY": "39.122161",
+"address": "天津市和平区陕西路与四平东道交口",
+"dTime": "2016-12-20 08:00"
+},
+{
+"lngX": "117.184906",
+"latY": "39.121644",
+"address": "天津市和平区四平东道与宁夏路交口",
+"dTime": "2016-12-20 08:30"
+},
+{
+"lngX": "117.184562",
+"latY": "39.119743",
+"address": "天津市和平区房地产管理局",
+"dTime": "2016-12-20 09:00"
+}
+]
+}
+var func = { name: "jzHistoryMark", arg: json };//传输name名称以及json串
+ifr.contentWindow.postMessage(func, targetOrigin);
+}
+
+var marker_guiji; var windowsArr_guiji;
+var lineArr_History;
+function jzHistoryMark(str) {
+    if ($(".righttopdiv-Animation").is(":visible")) {
+        $(".righttopdiv-Animation").hide(); //若动画播放层是显示的，则将其隐藏
+    }
+    lineArr_History = [];
+    windowsArr_guiji = [];
+    marker_guiji = [];
+    mapObj.clearMap();
+    var getName = str.dname;
+    $.each(str.guiji, function (index, item) {
+        var lngX = parseFloat(item.lngX); //经度
+        var latY = parseFloat(item.latY); //维度
+        var arr_guiji = GPS.gcj_encrypt(latY, lngX);
+        lngX = arr_guiji.lon.toFixed(6);
+        latY = arr_guiji.lat.toFixed(6);
+        lineArr_History.push(new AMap.LngLat(lngX, latY));
+        var marker_jz = new AMap.Marker({
+            map: mapObj,
+            content: '<div class=\"maplocation_red\" onmouseover=\"openMarkerById_jz(' + index + ',this)\" onmouseout=\"onmouseout_removejz()\" >' + (index + 1) + '</div>', //content: '<div class=\"maplocation_red\">' + (j + 1) + '</div>',
+            position: new AMap.LngLat(lngX, latY),
+            offset: new AMap.Pixel(-8, -10) //相对于基点的位置
+        });
+        var mar = new AMap.Marker(marker_jz);
+        marker_guiji.push(new AMap.LngLat(lngX, latY));
+
+
+        var infoWindow_jz = new AMap.InfoWindow({
+            content: "<div class='arrow-left'><div class='arrowdiv'><div class='arrow-name'>" + getName + "</div><div class='arrow-close' onclick='closeInfoWindow()'></div></div><div class='arrow-time'>" + item.dTime + "</div><div class='arrow-address'>" + item.address + "</div></div>",
+            size: new AMap.Size(230, 70),
+            autoMove: true,  //是否自动调整窗体到视野内
+            offset: new AMap.Pixel(114, 55),
+            showShadow: false
+        });
+        windowsArr_guiji.push(infoWindow_jz);
+        var aa = function (e) { infoWindow_jz.open(mapObj, marker_jz.getPosition()); }; //自定义一个点击方法
+        AMap.event.addListener(marker_jz, "click", aa); //当点击定位图标时，打开信息窗口
+    });
+    //绘制轨迹
+    var polyline = new AMap.Polyline({
+        map: mapObj,
+        path: lineArr_History,
+        strokeColor: "#f13323",//线颜色
+        strokeOpacity: 1,//线透明度
+        strokeWeight: 2,//线宽
+        strokeStyle: "solid",//线样式
+    });
+    mapObj.setFitView(); //适应地图至居中
+
+}
+
+
+function openMarkerById_jz(pointid,obj) {  //根据id 打开搜索结果点tip
+    //thiss.style.background = '#CAE1FF';
+    windowsArr_guiji[pointid].open(mapObj, marker_guiji[pointid]);
+}
+//  onmouseout=\"onmouseout_removejz()\"
+function onmouseout_removejz() {
+    mapObj.clearInfoWindow();
+}
+
+</script>
+</body>
+</html>
